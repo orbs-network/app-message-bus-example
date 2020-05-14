@@ -25,22 +25,26 @@ process.on('uncaughtException', function (e) {
     process.exit(64);
 });
 
+process.on('SIGINT', function () {
+    console.log('\ngraceful shutdown');
+    server && server.close(function (err) {
+        if (err) {
+            console.log(err.stack || err);
+        }
+        console.log('\nclosed server');
+        console.log('\ndone');
+        process.exit(0);
+    });
+});
+
+let server = null;
 try {
     const orbsConnections = [new MessageOrbsDriver(orbsUrl, orbsVChain, orbsContractName, orbsContractMethodName, orbsContractEventName)];
     if (process.env.ORBS_URL2) {
         orbsConnections.push(new MessageOrbsDriver(process.env.ORBS_URL2, process.env.ORBS_VCHAIN2, process.env.ORBS_CONTRACT_NAME2, orbsContractMethodName, orbsContractEventName));
     }
-    const server = gateway.serve(port, orbsConnections);
+    server = gateway.serve(port, orbsConnections);
 
-    process.on('SIGINT', function () {
-        console.log('\n\ngraceful shutdown');
-        server.close(function (err) {
-            if (err) {
-                console.log(err.stack || err);
-            }
-            process.exit(0);
-        });
-    });
 } catch (err) {
     console.error(err.message);
     process.exit(128);

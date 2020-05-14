@@ -10,14 +10,14 @@
 
 const MongoClient = require('mongodb').MongoClient;
 
-const MongoDBName = process.env.MESSAGE_DB_NAME;
 const MongoMessageCollection = "CollectedMessages";
 const MongoBlockChainInfoCollection = "BlockChainConfig";
 
 class MessageDb {
-  constructor(connectionUrl, defaultStartBlockHeight) {
+  constructor(connectionUrl, dbName, defaultStartBlockHeight) {
     this.MongoClient = MongoClient;
     this.connectionUrl = connectionUrl;
+    this.dbName = dbName;
     this.defaultStartBlockHeight = defaultStartBlockHeight;
   }
 
@@ -28,13 +28,13 @@ class MessageDb {
       useNewUrlParser: true, useUnifiedTopology: true
     });
     // try {
-    //   await this.client.db(MongoDBName).createCollection(MongoMessageCollection);
+    //   await this.client.db(this.dbName).createCollection(MongoMessageCollection);
     //   // todo create index ?
     // } catch (e) {
     //   console.log('payload err ' + e.message);
     // }
-    this.payloadsCollection = this.client.db(MongoDBName).collection(MongoMessageCollection);
-    this.orbsInfoColleciton = this.client.db(MongoDBName).collection(MongoBlockChainInfoCollection);
+    this.payloadsCollection = this.client.db(this.dbName).collection(MongoMessageCollection);
+    this.orbsInfoColleciton = this.client.db(this.dbName).collection(MongoBlockChainInfoCollection);
   }
 
   async destroy() {
@@ -74,4 +74,3 @@ class MessageDb {
 }
 
 module.exports = MessageDb;
-

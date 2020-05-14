@@ -23,6 +23,7 @@ const orbsStartBlockHeight = process.env.ORBS_START_BLOCK_HEIGHT;
 
 // message db
 const messageDbUrl = process.env.MESSAGE_DB_URL;
+const mongoDBName = process.env.MESSAGE_DB_NAME;
 
 const port = process.env.PORT || 3000;
 
@@ -31,29 +32,29 @@ process.on('uncaughtException', function (e) {
     process.exit(64);
 });
 
+process.on('SIGINT', async function () {
+    console.log('\n\nstarting graceful shutdown');
+    server || await server.close();
+    console.log('\nclosed server');
+    messageDB || await messageDB.destroy();
+    console.log('\nclosed db connection');
+    console.log('\ndone');
+    process.exit(0);
+
+});
+
+let server = null;
+let messageDB = null;
 async function main() {
     const orbsConnection = new MessageOrbsDriver(orbsUrl, orbsVChain, orbsContractName, orbsContractMethodName, orbsContractEventName);
-    const messageDB = new MessageDB(messageDbUrl, orbsStartBlockHeight);
+    messageDB = new MessageDB(messageDbUrl, mongoDBName, orbsStartBlockHeight);
     await messageDB.connect();
-    const server = collector.serve(port, orbsConnection, messageDB);
-
-    process.on('SIGINT', async function () {
-        console.log('\n\nstarting graceful shutdown');
-        await server.close();
-        console.log('\nclosed server');
-        await messageDB.destroy();
-        console.log('\nclosed db connection');
-        console.log('\ndone');
-        process.exit(0);
-
-    });
-
+    server = collector.serve(port, orbsConnection, messageDB);
     server.start();
 }
 
 main()
     .then(() => {
-        process.exit(0);
     }).catch(e => {
     console.error(e.message);
     process.exit(128);

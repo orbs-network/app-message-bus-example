@@ -18,25 +18,37 @@ class CollectorServer {
     start() {
         this._running = true;
         this._internalLoop = new Promise(async (resolve, reject) => {
-            let orbsLastReadBlockHeight = await this.messageDB.getCurrentBlockHeight() + 1;
-            console.log(`starting at block ${orbsLastReadBlockHeight}`);
+            try {
+                let orbsLastReadBlockHeight = await this.messageDB.getCurrentBlockHeight() + 1;
+                console.log(`starting at block ${orbsLastReadBlockHeight}`);
 
-            do {
-                const block = await this.orbsConnection.getBlock(orbsLastReadBlockHeight);
-                if (block) {
-                    let events = this.orbsConnection.filterEvents(block.transactions);
-                    console.log(`block ${orbsLastReadBlockHeight} has ${events.length > 0 ? events.length : 'no'} events.`);
-
-                    // write to DB (fail will cause exit)
-                    await this.messageDB.postMessages(events, orbsLastReadBlockHeight);
-                    orbsLastReadBlockHeight++;
-                } else {
-                    console.log("no new blocks, wait");
-                    await sleep(100);
-                }
-            } while (this._running);
-            console.log("collector interrupted");
-            resolve();
+                do {
+                    const block = await this.orbsConnection.getBlock(orbsLastReadBlockHeight);
+                    if (block) {
+                        let events = this.orbsConnection.filterEvents(block.transactions);
+                        if (events.length > 0) {
+                            try {
+                                // TODO smart retries
+                                await this.messageDB.postMessages(events, orbsLastReadBlockHeight);
+                            } catch (e) {
+                                console.error(`could not save to message db. error ${e.message}`);
+                                continue;
+                            }
+                        }
+                        if (orbsLastReadBlockHeight % 10 === 0) {
+                            console.log(`block ${orbsLastReadBlockHeight} was read.`);
+                        }
+                        orbsLastReadBlockHeight++;
+                    } else {
+                        console.log("no new blocks, wait");
+                        await sleep(100);
+                    }
+                } while (this._running);
+                console.log("collector interrupted");
+                resolve();
+            } catch (e) {
+                reject(e);
+            }
         });
     }
 

@@ -1,0 +1,7 @@
+{
+  "name": "Message Bus Example",
+  "description": "Example for application with gateway server sending messages to the block chain and collector server reading them into a db (default mongodb)",
+  "repository": "https://github.com/orbs-network/app-message-bus-example",
+  "logo": "https://cdn.rawgit.com/heroku/node-js-getting-started/master/public/node.svg",
+  "image": "heroku/nodejs"
+}

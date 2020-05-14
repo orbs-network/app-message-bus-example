@@ -67,7 +67,7 @@ typings/
 
 #test related
 */**/message.test.temp.db.js
+./message.test.temp.db.js
 
 */**/.DS_Store
 **/package-lock.json
-**/Procfile
