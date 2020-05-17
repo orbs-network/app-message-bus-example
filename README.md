@@ -48,3 +48,18 @@ messageDriver to deploy a contract from a running server on Heroku). It also inc
 ### Multi Procfile.
 If you plan to run both gateway and collector on Heroku from one repository you will need to apply [Multi Procfile](https://elements.heroku.com/buildpacks/heroku/heroku-buildpack-multi-procfile).
 You need to open two instances on Heroku and allow each Heroku server to run the correct node command.
+
+## Building Docker image
+
+```bash
+./docker-build.sh # build the image
+docker push orbsnetwork/message-bus # push the image
+```
+
+## Deploying to ECS
+
+1. Create `.env.production` file with all relevant configuration options.
+
+2. In the terminal: `export $(cat .env.production)` - this will set the environment varibles.
+
+3. 

@@ -34,8 +34,8 @@ module.exports = function (config, envOverride) {
     app.get('/', healthCheck);
 
     function healthCheck (request, response) {
-        let serviceName = require(__dirname + 'package.json').name;
-        let serviceVersion = require(__dirname + 'package.json').version;
+        let serviceName = require(__dirname + '/package.json').name;
+        let serviceVersion = require(__dirname + '/package.json').version;
         response.serverOk({env: env, service: serviceName, version: serviceVersion});
     }
 
