@@ -19,7 +19,7 @@ class GatewayServer {
 }
 
 module.exports.serve = function serve(port, orbsConnections) {
-  const app = generateExpressServer();
+  const app = generateExpressServer('gateway', port);
 
   app.post("/sendMessage", async (request, response) => {
     let data = request.body;

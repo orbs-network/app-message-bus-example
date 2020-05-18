@@ -60,7 +60,7 @@ class CollectorServer {
 }
 
 module.exports.serve = function serve(port, orbsConnection, messageDB) {
-    const app = generateExpressServer();
+    const app = generateExpressServer('collector', port);
 
     app.get("/current-block-height", async (request, response) => {
         try {

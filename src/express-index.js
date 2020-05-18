@@ -11,13 +11,13 @@ const express = require("express");
 const cors = require('cors');
 const bodyParser = require('body-parser');
 
-module.exports = function (config, envOverride) {
+module.exports = function (serverName, port, envOverride) {
     const app = express();
 
     const env = envOverride || process.env.NODE_ENV || 'local';
 
     app.set('env', env);
-    app.set('port', process.env.PORT || 3001);
+    app.set('port', port);
 
     // http-server setup
     app.use(cors());
@@ -36,7 +36,7 @@ module.exports = function (config, envOverride) {
     function healthCheck (request, response) {
         let serviceName = require(__dirname + '/package.json').name;
         let serviceVersion = require(__dirname + '/package.json').version;
-        response.serverOk({env: env, service: serviceName, version: serviceVersion});
+        response.serverOk({env: env, service: serviceName + '-' + serverName, version: serviceVersion});
     }
 
     express.response.serverOk = function (resultJson) {
