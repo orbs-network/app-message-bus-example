@@ -8,8 +8,8 @@
 const MessageOrbsDriver = require('../orbs/messageDriver');
 const gateway = require('./server');
 
-// check env only on production (=docker)
-// if (process.env.NODE_ENV === 'production'){ require('dotenv-safe').config(); }
+// check env only on production (=docker with internal docker directory structure)
+if (process.env.NODE_ENV === 'production'){ require('dotenv-safe').config({example: './gateway/.env.example'}); }
 
 // orbs connection
 const orbsUrl = process.env.ORBS_URL;

@@ -9,8 +9,8 @@ const MessageOrbsDriver = require('../orbs/messageDriver');
 const MessageDB = require('../messagedb/message.db');
 const collector = require('./server');
 
-// check env only on production (=docker)
-// if (process.env.NODE_ENV === 'production'){ require('dotenv-safe').config(); }
+// check env only on production (=docker with internal docker directory structure)
+if (process.env.NODE_ENV === 'production'){ require('dotenv-safe').config({example: './collector/.env.example'}); }
 
 // orbs connection
 const orbsUrl = process.env.ORBS_URL;
@@ -19,7 +19,6 @@ const orbsContractName = process.env.ORBS_CONTRACT_NAME;
 const orbsContractMethodName = "message";
 const orbsContractEventName = "message";
 const orbsStartBlockHeight = process.env.ORBS_START_BLOCK_HEIGHT;
-// first ever deploy 1018546
 
 // message db
 const messageDbUrl = process.env.MESSAGE_DB_URL;

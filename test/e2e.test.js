@@ -9,10 +9,9 @@
 'use strict';
 
 const expect = require("expect.js");
-const {describe, it, beforeEach, afterEach, after} = require('mocha');
+const {describe, it, beforeEach, afterEach} = require('mocha');
+const sinon = require('sinon');
 const fetch = require("node-fetch");
-const mongodb = require('mongo-mock');
-mongodb.max_delay = 1;//you can choose to NOT pretend to be async (default is 400ms)
 
 const MessageOrbsDriver = require('../src/orbs/messageDriver');
 const gateway = require('../src/gateway/server');
@@ -25,6 +24,7 @@ const orbsContractNameBase = process.env.ORBS_CONTRACT_NAME || "message";
 const orbsContractMethodName = "message";
 const orbsContractEventName = "message";
 const messageDbUrl = 'mongodb://localhost:27017/myproject';
+const messageDbName = 'myproject';
 
 async function sendMessageToGateway(port, msg) {
     const body = await fetch(`http://localhost:${port}/sendMessage`, {
@@ -45,34 +45,38 @@ function sleep(ms) {
     })
 }
 
-describe.skip("e2e", () => { // todo make it work
+describe("e2e", () => {
+    let sandbox;
     const gatewayPort = 3001;
     const collectorPort = 3002;
 
+    let messageDB;
     let gatewayServer;
     let collectorServer;
     beforeEach(async () => {
+        sandbox = sinon.createSandbox();
         const contractNameRand = orbsContractNameBase + new Date().getTime();
         const messageOrbsConnection = new MessageOrbsDriver(orbsEndpoint, vChainId, contractNameRand, orbsContractMethodName, orbsContractEventName);
         let deployBlock = await messageOrbsConnection.deploy();
+        messageDB = new MessageDB(messageDbUrl, messageDbName, deployBlock);
+        sinon.stub(messageDB, 'postMessages').callsFake();
+        sinon.stub(messageDB, 'getCurrentBlockHeight').resolves(deployBlock); // for the first time
         gatewayServer = gateway.serve(gatewayPort, [messageOrbsConnection]);
-        collectorServer = collector.serve(collectorPort, messageOrbsConnection, deployBlock, f);
+        collectorServer = collector.serve(collectorPort, messageOrbsConnection, messageDB);
+        collectorServer.start();
     });
-    afterEach(
-        () => {
-            stop = true;
-            gatewayServer && collectorServer &&
-            new Promise((res, rej) => gatewayServer.close((err) => (err ? rej(err) : res()))) &&
-            new Promise((res, rej) => collectorServer.close((err) => (err ? rej(err) : res())))
-        }
-    );
+    afterEach(async () => {
+        gatewayServer && await gatewayServer.close();
+        collectorServer && await collectorServer.close();
+        sandbox.restore();
+    });
 
     it("send-read message", async () => {
         const msg = { hello: "world" };
         let blockHeight = await sendMessageToGateway(gatewayPort, msg);
-        console.log(blockHeight);
         expect(blockHeight).to.not.equal(0);
-        // const reader = new Reader(endpoint, chain);
+        await sleep(200);
+        sinon.assert.callCount(messageDB.postMessages, 1);
     });
 });
 
@@ -120,48 +124,50 @@ describe("gateway - two orbs connections", () => {
 describe("collector", () => {
     const collectorPort = 3001;
 
-    let MongoClient = mongodb.MongoClient;
+    let sandbox;
+    let dataPayloads = [];
+    let dataBlock = 0;
+
     let collectorServer;
     let orbsConnection;
     let messageDB;
     let blockDeploy;
     beforeEach(async () => {
+        sandbox = sinon.createSandbox();
         const contractNameRand = orbsContractNameBase + new Date().getTime();
         orbsConnection = new MessageOrbsDriver(orbsEndpoint, vChainId, contractNameRand, orbsContractMethodName, orbsContractEventName);
         blockDeploy = await orbsConnection.deploy();
-        messageDB = new MessageDB(messageDbUrl, blockDeploy);
-        await messageDB.clearAll();
-        messageDB.MongoClient = null;
-        messageDB.MongoClient = MongoClient; // force using mock
-        await messageDB.connect();
+        messageDB = new MessageDB(messageDbUrl, messageDbName, blockDeploy);
+        sinon.stub(messageDB, 'postMessages').callsFake((payloadArray, blockHeight) => {dataBlock = blockHeight;dataPayloads.push(...payloadArray);}).ex;
+        sinon.stub(messageDB, 'getCurrentBlockHeight').resolves(blockDeploy); // for the first time
+
         collectorServer = collector.serve(collectorPort, orbsConnection, messageDB);
         collectorServer.start();
     });
     afterEach(async () => {
         collectorServer && await collectorServer.close();
-        await messageDB.clearAll();
-        await messageDB.destroy();
-        console.log('hhh')
-    });
-    after(() => {
-        collectorServer = null;
-        orbsConnection = null;
-        messageDB = null;
-        MongoClient = null;
-        console.log('hh4h')
+        sandbox.restore();
     });
 
-    it("reads from block chain", async () => {
+    it("reads from block chain, where each block has once tx", async () => {
         await orbsConnection.message({ hello: "world" });
         await orbsConnection.message({ hello: "world1" });
         await orbsConnection.message({ hello: "world2" });
         await orbsConnection.message({ hello: "world3" });
 
         await sleep(200);
-        let blockHeight = await messageDB.getCurrentBlockHeight();
-        expect(blockHeight).to.equal(blockDeploy+4);
-        let res = await messageDB.getAllMessages();
-        expect(res.length).to.equal(4);
+        sinon.assert.callCount(messageDB.postMessages, 4);
+        expect(dataBlock).to.equal(blockDeploy+4);
+        expect(dataPayloads.length).to.equal(4);
+    });
+
+    it.skip("reads from block chain one block many tx", async () => {
+        await orbsConnection.message({ hello: "world" }); // todo how to force same block ?
+
+        await sleep(200);
+        sinon.assert.callCount(messageDB.postMessages, 4);
+        expect(dataBlock).to.equal(blockDeploy+1);
+        expect(dataPayloads.length).to.equal(1);
     });
 });
 

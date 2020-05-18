@@ -1,13 +1,14 @@
 version: '2'
 
-services: 
+services:
     collector:
         image: orbsnetwork/message-bus
         ports:
-            - 8080:3000
+            - 3001:3000
         env_file: ./.env.production.collector
         mem_limit: 256000000
         command: node ./collector/index.js
+        restart: always
 
     gateway:
         image: orbsnetwork/message-bus
@@ -16,3 +17,4 @@ services:
         env_file: ./.env.production.gateway
         mem_limit: 256000000
         command: node ./gateway/index.js
+        restart: always
