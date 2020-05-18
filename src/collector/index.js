@@ -18,7 +18,7 @@ const orbsVChain = process.env.ORBS_VCHAIN;
 const orbsContractName = process.env.ORBS_CONTRACT_NAME;
 const orbsContractMethodName = "message";
 const orbsContractEventName = "message";
-const orbsStartBlockHeight = process.env.ORBS_START_BLOCK_HEIGHT;
+const orbsStartBlockHeight = Number(process.env.ORBS_START_BLOCK_HEIGHT);
 
 // message db
 const messageDbUrl = process.env.MESSAGE_DB_URL;
