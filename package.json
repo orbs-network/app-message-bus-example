@@ -4,7 +4,9 @@
   "description": "read-write-message-example",
   "main": "server.js",
   "scripts": {
-    "test": "mocha **/*.test.js"
+    "test": "mocha **/*.test.js",
+    "test:e2e": "mocha --timeout 50000 --exit test/e2e.external.test.js",
+    "build": "./docker-build.sh"
   },
   "author": "Noam Berg <noam.berg@gmail.com>",
   "license": "MIT",
