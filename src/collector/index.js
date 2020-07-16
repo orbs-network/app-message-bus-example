@@ -6,7 +6,7 @@
  * The above notice should be included in all copies or substantial portions of the software.
  */
 const MessageOrbsDriver = require('../orbs/messageDriver');
-const MessageDB = require('../messagedb/message.db');
+const MessageDB = require('../messagedb/message.postgres.db');
 const collector = require('./server');
 
 // check env only on production (=docker with internal docker directory structure)

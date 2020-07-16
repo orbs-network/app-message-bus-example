@@ -10,21 +10,17 @@
 
 const expect = require("expect.js");
 const {describe, it, beforeEach, afterEach, after} = require('mocha');
-const mongodb = require('mongo-mock');
-mongodb.max_delay = 1;//you can choose to NOT pretend to be async (default is 400ms)
-let MongoClient = mongodb.MongoClient;
-const MessageDB = require('../src/messagedb/message.db');
+const MessageDB = require('../src/messagedb/message.postgres.db');
 
-const DummyUrl = 'mongodb://localhost:27017/messagedbtest';
-const DummyName = 'messagedbtest';
-const DefaultHeight = 100;
+const DummyUrl = 'postgres://root:example@localhost:5432/message';
+const DummyName = 'message';
+const DefaultHeight = 1;
 
 // mongo-mock seems to get the mocha stuck at end - so this is skipped.
 // these tests are more "robust" as they test logic inside db too via local temp.
-describe.skip("message db - mongo", () => {
+describe("message db - postgres", () => {
     let db = new MessageDB(DummyUrl, DummyName, DefaultHeight);
     beforeEach(async () => {
-        db.MongoClient = MongoClient; // force using mock
         await db.connect();
     });
     afterEach(async () => {
@@ -32,7 +28,7 @@ describe.skip("message db - mongo", () => {
         await db.destroy();
     });
     after(()=> {
-        MongoClient = null;
+
     });
 
     it("empty db has default block height", async () => {
@@ -42,17 +38,18 @@ describe.skip("message db - mongo", () => {
 
     it("empty db post one message", async () => {
         let newBlock = 50001;
-        await db.postMessages([message1], newBlock);
+        await db.postMessages([asEvent(message1)], newBlock);
         let blockHeight = await db.getCurrentBlockHeight();
         expect(blockHeight).to.equal(newBlock);
         let res = await db.getAllMessages();
         expect(res.length).to.equal(1);
+        console.log(res[0]);
         expect(messageEqual(res[0], message1)).to.equal(true);
     });
 
     it("empty db post two message same time", async () => {
         let newBlock = 50001;
-        await db.postMessages([message2, message3], newBlock);
+        await db.postMessages([asEvent(message2), asEvent(message3)], newBlock);
         let blockHeight = await db.getCurrentBlockHeight();
         expect(blockHeight).to.equal(newBlock);
         let res = await db.getAllMessages();
@@ -63,8 +60,8 @@ describe.skip("message db - mongo", () => {
     it("empty db post two message one after another", async () => {
         let newBlock1 = 50001;
         let newBlock2 = 50003;
-        await db.postMessages([message3], newBlock1);
-        await db.postMessages([message2], newBlock2);
+        await db.postMessages([asEvent(message3)], newBlock1);
+        await db.postMessages([asEvent(message2)], newBlock2);
         let blockHeight = await db.getCurrentBlockHeight();
         expect(blockHeight).to.equal(newBlock2);
         let res = await db.getAllMessages();
@@ -82,6 +79,14 @@ function messageEqual(a, b) {
         a.EventValue === b.EventValue;
 }
 
+function asEvent(message) {
+    return {
+        "txIndex": 0,
+        "txTime" : new Date(),
+        "txId" : "some-tx-id",
+        "txMessage" : message,
+    }
+}
 const message1 = {
     "TagID": "ex-c0c010500004",
     "Latitude": 42.34489822387695,

@@ -31,7 +31,7 @@ async function sendMessageToGateway(msg) {
     return result[0].response.blockHeight;
 }
 
-describe("e2e", () => {
+describe("external e2e", () => {
     let messageDB;
     beforeEach(async () => {
         const contractNameRand = orbsContractNameBase;
