@@ -3,14 +3,14 @@ const {describe, it, beforeEach, afterEach} = require("mocha");
 const fetch = require("node-fetch");
 
 const MessageOrbsDriver = require("../src/orbs/messageDriver");
-const MessageDB = require('../src/messagedb/message.db');
+const MessageDB = require('../src/messagedb/message.postgres.db');
 
 const orbsEndpoint = process.env.ORBS_NODE_ADDRESS || "http://localhost:8090";
 const vChainId = Number(process.env.ORBS_VCHAIN) || 42;
 const orbsContractNameBase = process.env.ORBS_CONTRACT_NAME || "message";
 const orbsContractMethodName = "message";
 const orbsContractEventName = "message";
-const messageDbUrl = "mongodb://root:example@localhost:27017/message?authSource=admin";
+const messageDbUrl = "postgres://root:example@localhost:5432/message";
 const messageDbName = "message";
 
 function sleep(ms) {
@@ -48,6 +48,6 @@ describe("external e2e", () => {
         await sleep(200);
         const messages = await messageDB.getAllMessages();
         expect(messages).to.not.be.empty();
-        expect(messages[0].txMessage).to.be.eql(msg);
+        expect(messages[0]).to.be.eql(msg);
     });
 });

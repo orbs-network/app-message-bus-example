@@ -70,6 +70,12 @@ docker push orbsnetwork/message-bus # push the image
 docker-compose up
 ```
 
+To clean up docker:
+
+```bash
+docker rm -f $(docker ps -aq) && docker volume rm $(docker volume ls -q)
+```
+
 ### Running on ECS
 
 ```bash
