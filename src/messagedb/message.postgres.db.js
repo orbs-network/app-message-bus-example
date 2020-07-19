@@ -38,16 +38,11 @@ class MessageDb {
     }
 
     async createTables() {
-        await this.db.none(`CREATE TABLE IF NOT EXISTS ${DB_EVENTS_TABLE_NAME} (event_id SERIAL PRIMARY KEY,
-            txid TEXT,
-            blockheight INTEGER,
-            blocktxindex INTEGER,
-            blocktime TEXT,
-            payload jsonb
-        )`);
+        await this.db.none("CREATE TABLE IF NOT EXISTS $1~ (event_id SERIAL PRIMARY KEY, txid TEXT, blockheight INTEGER, blocktxindex INTEGER, blocktime TEXT, payload jsonb)", 
+            [DB_EVENTS_TABLE_NAME]);
         // FIXME create index
 
-        await this.db.none(`CREATE TABLE IF NOT EXISTS ${DB_CONFIG_TABLE_NAME} (${DB_CONFIG_COLUMN_BLOCK_HEIGHT_NAME} INTEGER)`);
+        await this.db.none("CREATE TABLE IF NOT EXISTS $1~ ($2~ INTEGER)", [DB_CONFIG_TABLE_NAME, DB_CONFIG_COLUMN_BLOCK_HEIGHT_NAME]);
 
         try {
             await this.getCurrentBlockHeight();
@@ -58,8 +53,12 @@ class MessageDb {
     }
 
     _writeEventInTransaction(t, blockHeight, event) {
-        return t.none(`INSERT INTO ${DB_EVENTS_TABLE_NAME} (blockheight, blocktxindex, blocktime, txid, payload) values (${blockHeight}, \${txIndex}, \${txTime}, \${txId}, \${txMessage}) on conflict do nothing`,
-            event);
+        return t.none("INSERT INTO ${table:raw} (blockheight, blocktxindex, blocktime, txid, payload) values (${blockHeight}, ${event.txIndex}, ${event.txTime}, ${event.txId}, ${event.txMessage}) on conflict do nothing",
+            {
+                table: DB_EVENTS_TABLE_NAME,
+                blockHeight,
+                event
+            });
     }
 
     async getAllMessages() {
@@ -68,7 +67,7 @@ class MessageDb {
     }
 
     deleteAllEvents() {
-        return this.db.none(`DELETE FROM ${DB_EVENTS_TABLE_NAME}`);
+        return this.db.none("DELETE FROM $1~", [DB_EVENTS_TABLE_NAME]);
     }
 
     _writeBlockHeightInTransaction(t , blockHeight) {
@@ -80,7 +79,7 @@ class MessageDb {
     }
 
     async getCurrentBlockHeight() {
-        const result = await this.db.one('SELECT $1~ FROM config limit 1', DB_CONFIG_COLUMN_BLOCK_HEIGHT_NAME, DB_CONFIG_TABLE_NAME);
+        const result = await this.db.one('SELECT $1~ FROM $2~ limit 1', [DB_CONFIG_COLUMN_BLOCK_HEIGHT_NAME, DB_CONFIG_TABLE_NAME]);
         return result[DB_CONFIG_COLUMN_BLOCK_HEIGHT_NAME];
     }
 
@@ -95,8 +94,8 @@ class MessageDb {
     }
 
     async clearAll() {
-        await this.db.none(`DROP TABLE ${DB_EVENTS_TABLE_NAME}`);
-        await this.db.none(`DROP TABLE ${DB_CONFIG_TABLE_NAME}`);
+        await this.db.none("DROP TABLE $1~", [DB_EVENTS_TABLE_NAME]);
+        await this.db.none("DROP TABLE $1~", [DB_CONFIG_TABLE_NAME]);
     }
 }
 

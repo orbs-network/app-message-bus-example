@@ -12,6 +12,7 @@ const orbsContractMethodName = "message";
 const orbsContractEventName = "message";
 const messageDbUrl = "postgres://root:example@localhost:5432/message";
 const messageDbName = "message";
+const SKIP_DEPLOY = process.env.SKIP_DEPLOY == "true";
 
 function sleep(ms) {
     return new Promise(resolve => {
@@ -36,7 +37,11 @@ describe("external e2e", () => {
     beforeEach(async () => {
         const contractNameRand = orbsContractNameBase;
         const messageOrbsConnection = new MessageOrbsDriver(orbsEndpoint, vChainId, contractNameRand, orbsContractMethodName, orbsContractEventName);
-        let deployBlock = await messageOrbsConnection.deploy();
+        if (SKIP_DEPLOY) {
+            deployBlock = 1;
+        } else {
+            let deployBlock = await messageOrbsConnection.deploy();
+        }
         messageDB = new MessageDB(messageDbUrl, messageDbName, deployBlock);
         await messageDB.connect();
     });
