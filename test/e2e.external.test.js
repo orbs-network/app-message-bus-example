@@ -3,15 +3,16 @@ const {describe, it, beforeEach, afterEach} = require("mocha");
 const fetch = require("node-fetch");
 
 const MessageOrbsDriver = require("../src/orbs/messageDriver");
-const MessageDB = require('../src/messagedb/message.db');
+const MessageDB = require('../src/messagedb/message.postgres.db');
 
 const orbsEndpoint = process.env.ORBS_NODE_ADDRESS || "http://localhost:8090";
 const vChainId = Number(process.env.ORBS_VCHAIN) || 42;
 const orbsContractNameBase = process.env.ORBS_CONTRACT_NAME || "message";
 const orbsContractMethodName = "message";
 const orbsContractEventName = "message";
-const messageDbUrl = "mongodb://root:example@localhost:27017/message?authSource=admin";
+const messageDbUrl = "postgres://root:example@localhost:5432/message";
 const messageDbName = "message";
+const SKIP_DEPLOY = process.env.SKIP_DEPLOY == "true";
 
 function sleep(ms) {
     return new Promise(resolve => {
@@ -31,12 +32,17 @@ async function sendMessageToGateway(msg) {
     return result[0].response.blockHeight;
 }
 
-describe("e2e", () => {
+describe("external e2e", () => {
     let messageDB;
+    let deployBlock;
     beforeEach(async () => {
         const contractNameRand = orbsContractNameBase;
         const messageOrbsConnection = new MessageOrbsDriver(orbsEndpoint, vChainId, contractNameRand, orbsContractMethodName, orbsContractEventName);
-        let deployBlock = await messageOrbsConnection.deploy();
+        if (SKIP_DEPLOY) {
+            deployBlock = 1;
+        } else {
+            deployBlock = await messageOrbsConnection.deploy();
+        }
         messageDB = new MessageDB(messageDbUrl, messageDbName, deployBlock);
         await messageDB.connect();
     });
@@ -48,6 +54,6 @@ describe("e2e", () => {
         await sleep(200);
         const messages = await messageDB.getAllMessages();
         expect(messages).to.not.be.empty();
-        expect(messages[0].txMessage).to.be.eql(msg);
+        expect(messages[0]).to.be.eql(msg);
     });
 });

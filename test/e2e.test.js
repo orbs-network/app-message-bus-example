@@ -23,8 +23,8 @@ const vChainId = Number(process.env.ORBS_VCHAIN) || 42;
 const orbsContractNameBase = process.env.ORBS_CONTRACT_NAME || "message";
 const orbsContractMethodName = "message";
 const orbsContractEventName = "message";
-const messageDbUrl = 'mongodb://localhost:27017/myproject';
-const messageDbName = 'myproject';
+const messageDbUrl = 'postgres://root:example@localhost:5432/message';
+const messageDbName = 'message';
 
 async function sendMessageToGateway(port, msg) {
     const body = await fetch(`http://localhost:${port}/sendMessage`, {

@@ -25,11 +25,12 @@ services:
             - 8090:8080
         restart: always
 
-    mongo:
-        image: mongo
+    postgres:
+        image: postgres
         ports:
-            - 27017:27017
+            - 5432:5432
         environment:
-            MONGO_INITDB_ROOT_USERNAME: root
-            MONGO_INITDB_ROOT_PASSWORD: example
+            POSTGRES_USER: root
+            POSTGRES_PASSWORD: example
+            POSTGRES_DB: message
         restart: always
