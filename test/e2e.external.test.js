@@ -34,13 +34,14 @@ async function sendMessageToGateway(msg) {
 
 describe("external e2e", () => {
     let messageDB;
+    let deployBlock;
     beforeEach(async () => {
         const contractNameRand = orbsContractNameBase;
         const messageOrbsConnection = new MessageOrbsDriver(orbsEndpoint, vChainId, contractNameRand, orbsContractMethodName, orbsContractEventName);
         if (SKIP_DEPLOY) {
             deployBlock = 1;
         } else {
-            let deployBlock = await messageOrbsConnection.deploy();
+            deployBlock = await messageOrbsConnection.deploy();
         }
         messageDB = new MessageDB(messageDbUrl, messageDbName, deployBlock);
         await messageDB.connect();
