@@ -10,8 +10,9 @@ const vChainId = Number(process.env.ORBS_VCHAIN) || 42;
 const orbsContractNameBase = process.env.ORBS_CONTRACT_NAME || "message";
 const orbsContractMethodName = "message";
 const orbsContractEventName = "message";
-const messageDbUrl = "postgres://root:example@localhost:5432/message";
-const messageDbName = "message";
+const messageDbUrl =  process.env.MESSAGE_DB_URL || "postgres://root:example@localhost:5432/message";
+const messageDbName = process.env.MESSAGE_DB_NAME || "message";
+const gatewayEndpoint = process.env.ENDPOINT || "http://localhost:80";
 const SKIP_DEPLOY = process.env.SKIP_DEPLOY == "true";
 
 function sleep(ms) {
@@ -21,7 +22,7 @@ function sleep(ms) {
 }
 
 async function sendMessageToGateway(msg) {
-    const body = await fetch(`http://localhost:80/sendMessage`, {
+    const body = await fetch(`http://${gatewayEndpoint}/sendMessage`, {
         method: "post",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(msg),
