@@ -13,7 +13,7 @@ contract to Orbs as part of the regular server activity.
 #### MessageDB
 This database holds a copy of the messages from the blockchain. It is meant to be source of data to 
 the "receiver" end of the bus for further manipulation (BI, tracking etc). In the default example we
-use pure MongoDB as it is a document databse with no schema.
+use PostgreSQL that has a special `jsonb` type that allows us query JSON payload if needed.
 
 #### ItemDB
 Optionally one might want to manipulate the data that is saved in the blockchain. For example encryption or anonymization.
@@ -29,7 +29,7 @@ sending it to the public blockchain.
 
 ### 4) Collector server
 The collector server is an infinite loop that tries to read from the blockchain to find the relevant
-messages. Each message is saved to a message DB (there are multiple examples - default is mongo db).
+messages. Each message is saved to a message DB.
 Externally it exposes ```/current-block-height``` to allow monitoring. In the example if save fails the 
 server tries reading again and again for ever.
 

@@ -22,7 +22,6 @@ const orbsStartBlockHeight = Number(process.env.ORBS_START_BLOCK_HEIGHT);
 
 // message db
 const messageDbUrl = process.env.MESSAGE_DB_URL;
-const mongoDBName = process.env.MESSAGE_DB_NAME;
 
 const port = process.env.PORT || 3000;
 
@@ -46,7 +45,7 @@ let server = null;
 let messageDB = null;
 async function main() {
     const orbsConnection = new MessageOrbsDriver(orbsUrl, orbsVChain, orbsContractName, orbsContractMethodName, orbsContractEventName);
-    messageDB = new MessageDB(messageDbUrl, mongoDBName, orbsStartBlockHeight);
+    messageDB = new MessageDB(messageDbUrl, orbsStartBlockHeight);
     await messageDB.connect();
     server = collector.serve(port, orbsConnection, messageDB);
     server.start();

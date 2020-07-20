@@ -15,8 +15,6 @@ const IdentityDb = require("../src/identitydb/identity.postgres.db");
 
 const DummyUrl = 'postgres://root:example@localhost:5432/message';
 
-// mongo-mock seems to get the mocha stuck at end - so this is skipped.
-// these tests are more "robust" as they test logic inside db too via local temp.
 describe("message db - postgres", () => {
     let db = new IdentityDb(DummyUrl);
     beforeEach(async () => {

@@ -8,12 +8,11 @@ const DB_CONFIG_TABLE_NAME = 'config';
 const DB_CONFIG_COLUMN_BLOCK_HEIGHT_NAME = 'last_collected_block_height';
 const DB_EVENTS_TABLE_NAME = 'events';
 const DB_EVENTS_PAYLOAD_NAME = 'payload';
-const ORBS_START_BLOCK_HEIGHT = process.env.ORBS_START_BLOCK_HEIGHT || 1;
 
 class MessageDb {
     constructor(connectionUrl, startBlockHeight) {
         this.connectionUrl = connectionUrl;
-        this.startBlockHeight = startBlockHeight || ORBS_START_BLOCK_HEIGHT;
+        this.startBlockHeight = startBlockHeight || 1;
     }
 
     async connect() {
