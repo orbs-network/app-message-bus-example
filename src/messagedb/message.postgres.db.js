@@ -17,6 +17,7 @@ const DB_CONFIG_TABLE_NAME = 'config';
 const DB_CONFIG_COLUMN_BLOCK_HEIGHT_NAME = 'last_collected_block_height';
 const DB_EVENTS_TABLE_NAME = 'events';
 const DB_EVENTS_PAYLOAD_NAME = 'payload';
+const DB_IDENTITIES_TABLE_NAME = 'identities';
 const ORBS_START_BLOCK_HEIGHT = process.env.ORBS_START_BLOCK_HEIGHT || 1;
 
 class MessageDb {
@@ -44,6 +45,8 @@ class MessageDb {
 
         await this.db.none("CREATE TABLE IF NOT EXISTS $1~ ($2~ INTEGER)", [DB_CONFIG_TABLE_NAME, DB_CONFIG_COLUMN_BLOCK_HEIGHT_NAME]);
 
+        await this.db.none("CREATE TABLE IF NOT EXISTS $1~ (uuid CHAR(36), value TEXT)", [DB_IDENTITIES_TABLE_NAME]);
+
         try {
             await this.getCurrentBlockHeight();
         } catch (e) {
@@ -61,9 +64,21 @@ class MessageDb {
             });
     }
 
+    _writeIdentityInTransaction(t, identity) {
+        return t.none("INSERT INTO ${table:raw} (uuid, value) values (${identity.uuid}, ${identity.value}) on conflict do nothing",
+            {
+                table: DB_IDENTITIES_TABLE_NAME,
+                identity,
+            });
+    }
+
     async getAllMessages() {
         const result = await this.db.manyOrNone('SELECT $1~ FROM $2~', [DB_EVENTS_PAYLOAD_NAME, DB_EVENTS_TABLE_NAME]);
         return map(result, DB_EVENTS_PAYLOAD_NAME);
+    }
+
+    async getAllIdentities() {
+        return this.db.manyOrNone('SELECT * FROM $1~', [DB_IDENTITIES_TABLE_NAME]);
     }
 
     deleteAllEvents() {
@@ -83,12 +98,19 @@ class MessageDb {
         return result[DB_CONFIG_COLUMN_BLOCK_HEIGHT_NAME];
     }
 
-    postMessages(events, blockHeight) {
+    postMessages(events, blockHeight, identites) {
         return this.db.tx(t => {
             let batch = [this._writeBlockHeightInTransaction(t, blockHeight)];
-            for (let i = 0;i < events.length;i++){
+            for (let i = 0; i < events.length; i++){
                 batch.push(this._writeEventInTransaction(t, blockHeight, events[i]));
             }
+
+            if (identites) {
+                for (let i = 0; i < identites.length; i++){
+                    batch.push(this._writeIdentityInTransaction(t, identites[i]));
+                }
+            }
+
             return t.batch(batch);
         })
     }
@@ -96,6 +118,7 @@ class MessageDb {
     async clearAll() {
         await this.db.none("DROP TABLE $1~", [DB_EVENTS_TABLE_NAME]);
         await this.db.none("DROP TABLE $1~", [DB_CONFIG_TABLE_NAME]);
+        await this.db.none("DROP TABLE $1~", [DB_IDENTITIES_TABLE_NAME]);
     }
 }
 

@@ -19,7 +19,8 @@
     "lodash": "^4.17.19",
     "mongodb": "^3.5.7",
     "orbs-client-sdk": "^2.5.0",
-    "pg-promise": "^10.4.4"
+    "pg-promise": "^10.4.4",
+    "uuidv4": "^6.2.0"
   },
   "directories": {
     "test": "tests"

@@ -11,6 +11,7 @@
 const expect = require("expect.js");
 const {describe, it, beforeEach, afterEach, after} = require('mocha');
 const MessageDB = require('../src/messagedb/message.postgres.db');
+const { uuid } = require("uuidv4");
 
 const DummyUrl = 'postgres://root:example@localhost:5432/message';
 const DummyName = 'message';
@@ -47,7 +48,7 @@ describe("message db - postgres", () => {
         expect(messageEqual(res[0], message1)).to.equal(true);
     });
 
-    it("empty db post two message same time", async () => {
+    it("empty db post two messages same time", async () => {
         let newBlock = 50001;
         await db.postMessages([asEvent(message2), asEvent(message3)], newBlock);
         let blockHeight = await db.getCurrentBlockHeight();
@@ -57,7 +58,7 @@ describe("message db - postgres", () => {
         expect(messageEqual(res[1], message3)).to.equal(true);
     });
 
-    it("empty db post two message one after another", async () => {
+    it("empty db post two messages one after another", async () => {
         let newBlock1 = 50001;
         let newBlock2 = 50003;
         await db.postMessages([asEvent(message3)], newBlock1);
@@ -68,6 +69,23 @@ describe("message db - postgres", () => {
         expect(res.length).to.equal(2);
     });
 
+    it("empty db post two messages with identities", async () => {
+        let newBlock = 50001;
+        const identities = [
+            { uuid: uuid(), value: "hello"},
+            { uuid: uuid(), value: "world"},
+        ];
+        await db.postMessages([asEvent(message2), asEvent(message3)], newBlock, identities);
+        let blockHeight = await db.getCurrentBlockHeight();
+        expect(blockHeight).to.equal(newBlock);
+        let res = await db.getAllMessages();
+        expect(res.length).to.equal(2);
+        expect(messageEqual(res[1], message3)).to.equal(true);
+
+        let resIdentities = await db.getAllIdentities();
+        expect(resIdentities.length).to.equal(2);
+        expect(resIdentities).to.eql(identities);
+    });
 });
 
 function messageEqual(a, b) {
