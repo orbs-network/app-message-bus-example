@@ -17,6 +17,7 @@ const MessageOrbsDriver = require('../src/orbs/messageDriver');
 const gateway = require('../src/gateway/server');
 const collector = require('../src/collector/server');
 const MessageDB = require('../src/messagedb/message.postgres.db');
+const IdentityDb = require("../src/identitydb/identity.postgres.db");
 
 const orbsEndpoint = process.env.ORBS_NODE_ADDRESS || "http://localhost:8080";
 const vChainId = Number(process.env.ORBS_VCHAIN) || 42;
@@ -125,20 +126,32 @@ describe("e2e with API key", () => {
 
 describe("e2e with anonymized keys", () => {
     const gatewayPort = 3001;
+    const collectorPort = 3002;
 
+    let identityDb;
     let messageDB;
     let gatewayServer;
+    let collectorServer;
     beforeEach(async () => {
         const contractNameRand = orbsContractNameBase + new Date().getTime();
         const messageOrbsConnection = new MessageOrbsDriver(orbsEndpoint, vChainId, contractNameRand, orbsContractMethodName, orbsContractEventName);
         let deployBlock = await messageOrbsConnection.deploy();
+
         messageDB = new MessageDB(messageDbUrl, deployBlock);
         await messageDB.connect();
+
+        identityDb = new IdentityDb(messageDbUrl);
+        await identityDb.connect();
+
         gatewayServer = await gateway.serve(gatewayPort, [messageOrbsConnection], [], { fields: ["operator"], connectionUrl: messageDbUrl });
+        collectorServer = collector.serve(collectorPort, messageOrbsConnection, messageDB);
+        collectorServer.start();
     });
     afterEach(async () => {
         gatewayServer && await gatewayServer.close();
+        collectorServer && await collectorServer.close();
         await messageDB.clearAll();
+        await identityDb.clearAll();
     });
 
     it("send-read message", async () => {
@@ -146,9 +159,13 @@ describe("e2e with anonymized keys", () => {
         let blockHeight = expectSuccessAndReturnBlockHeight(await sendMessageToGateway(gatewayPort, msg));
         expect(blockHeight).to.not.equal(0);
         await sleep(200);
-        let res = await messageDB.getAllIdentities();
+
+        let res = await identityDb.getAllIdentities();
         expect(res[0].uuid.length).to.be.eql(36);
         expect(res[0].value).to.be.eql("random guy");
+
+        let resMessages = await messageDB.getAllMessages();
+        expect(resMessages[0]).to.be.eql({ operator: res[0].uuid, hello: "world" });
     });
 });
 

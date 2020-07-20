@@ -67,17 +67,6 @@ describe("message db - postgres", () => {
         let res = await db.getAllMessages();
         expect(res.length).to.equal(2);
     });
-
-    it("empty db save identities", async () => {
-        const identities = [
-            { uuid: uuid(), value: "hello"},
-            { uuid: uuid(), value: "world"},
-        ];
-        await db.saveIdentities(identities);
-        let res = await db.getAllIdentities();
-        expect(res.length).to.equal(2);
-        expect(res).to.eql(identities);
-    });
 });
 
 function messageEqual(a, b) {

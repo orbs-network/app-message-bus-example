@@ -9,7 +9,7 @@
 const generateExpressServer = require('../express-index');
 const { isEmpty, includes, map, has } = require("lodash");
 const { uuid } = require('uuidv4');
-const MessageDb = require('../messagedb/message.postgres.db');
+const IdentityDb = require('../identitydb/identity.postgres.db');
 
 class GatewayServer {
   constructor(listener) {
@@ -33,7 +33,7 @@ module.exports.serve = async function serve(port, orbsConnections, apiKeys, anon
   if (isEmpty(fields)) {
     console.info(`No anonymous fields configured, everything will be recorded as is`);
   } else {
-    db = new MessageDb(connectionUrl);
+    db = new IdentityDb(connectionUrl);
     await db.connect();
   }
 
