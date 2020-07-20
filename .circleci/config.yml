@@ -25,7 +25,7 @@ jobs:
       - run: docker-compose up -d
       - node/with-cache:
           steps:
-            - run: npm run test:e2e # --  --timeout=10m --tap --no-color| npx tap-xunit > _out/e2e/test.xml
+            - run: npm run test # --  --timeout=10m --tap --no-color| npx tap-xunit > _out/e2e/test.xml
     #   - store_test_results:
     #       path: _out
     #   - store_artifacts:
