@@ -22,7 +22,7 @@ function sleep(ms) {
 }
 
 async function sendMessageToGateway(msg) {
-    const body = await fetch(`http://${gatewayEndpoint}/sendMessage`, {
+    const body = await fetch(`${gatewayEndpoint}/sendMessage`, {
         method: "post",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(msg),
