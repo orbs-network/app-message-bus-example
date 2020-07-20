@@ -64,6 +64,16 @@ docker push orbsnetwork/message-bus # push the image
 
 2. Create `.env.production.gateway` file with all relevant configuration options **for the gateway**
 
+#### Gateway options
+
+##### API keys
+
+Environment variable `API_KEYS=key1,key2,key3` allows filtering requests by API key.
+
+If the `API_KEYS` variable is set, all the requests without the key will be rejected.
+
+All valid requests **should include** `X-Auth: $API_KEY_VALUE` in the list of HTTP headers.
+
 ### Running locally
 
 ```bash
