@@ -4,7 +4,7 @@
   "description": "read-write-message-example",
   "main": "server.js",
   "scripts": {
-    "test": "mocha --exit **/*.test.js",
+    "test": "mocha --timeout 50000 --exit **/*.test.js",
     "test:e2e": "mocha --timeout 50000 --exit test/e2e.external.test.js",
     "build": "./docker-build.sh"
   },

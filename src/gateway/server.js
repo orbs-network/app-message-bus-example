@@ -7,6 +7,7 @@
  */
 
 const generateExpressServer = require('../express-index');
+const { isEmpty, includes } = require("lodash");
 
 class GatewayServer {
   constructor(listener) {
@@ -18,12 +19,24 @@ class GatewayServer {
   }
 }
 
-module.exports.serve = function serve(port, orbsConnections) {
+module.exports.serve = function serve(port, orbsConnections, apiKeys) {
   const app = generateExpressServer('gateway', port);
+  if (isEmpty(apiKeys)) {
+    console.info(`No API keys configured, anyone will be able to send messages via gateway`);
+  }
 
   app.post("/sendMessage", async (request, response) => {
     let data = request.body;
     try {
+      if (!isEmpty(apiKeys)) {
+        const key = request.headers["x-auth"];
+        if (!includes(apiKeys, key)) {
+          console.error(`Wrong API key: ${key}`);
+          response.status(403).json({ error: "Wrong API key" });
+          return;
+        }
+      }
+
       let txs = [];
       for (let i = 0; i < orbsConnections.length; i++) {
            txs.push(orbsConnections[i].message(data).then(resp => {return { connection: i, endpoint: orbsConnections[i].endpoint, response: resp} }));
@@ -31,7 +44,7 @@ module.exports.serve = function serve(port, orbsConnections) {
       let resp = await Promise.all(txs);
       response.json(resp);
     } catch (e) {
-      response.json({error: e.message, stake: e.stack})
+      response.json({error: e.message, stack: e.stack})
     }
   });
 
