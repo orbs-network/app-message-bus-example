@@ -42,15 +42,17 @@ process.on('SIGINT', function () {
     });
 });
 
-let server = null;
-try {
-    const orbsConnections = [new MessageOrbsDriver(orbsUrl, orbsVChain, orbsContractName, orbsContractMethodName, orbsContractEventName)];
-    if (process.env.ORBS_URL2) {
-        orbsConnections.push(new MessageOrbsDriver(process.env.ORBS_URL2, process.env.ORBS_VCHAIN2, process.env.ORBS_CONTRACT_NAME2, orbsContractMethodName, orbsContractEventName));
-    }
-    server = await gateway.serve(port, orbsConnections, apiKeys, { fields: anonymousFields, connectionUrl: identityDbURL });
+(async () => {
+    let server = null;
+    try {
+        const orbsConnections = [new MessageOrbsDriver(orbsUrl, orbsVChain, orbsContractName, orbsContractMethodName, orbsContractEventName)];
+        if (process.env.ORBS_URL2) {
+            orbsConnections.push(new MessageOrbsDriver(process.env.ORBS_URL2, process.env.ORBS_VCHAIN2, process.env.ORBS_CONTRACT_NAME2, orbsContractMethodName, orbsContractEventName));
+        }
+        server = await gateway.serve(port, orbsConnections, apiKeys, { fields: anonymousFields, connectionUrl: identityDbURL });
 
-} catch (err) {
-    console.error(err.message);
-    process.exit(128);
-}
+    } catch (err) {
+        console.error(err.message);
+        process.exit(128);
+    }
+})();
