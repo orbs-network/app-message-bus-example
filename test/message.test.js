@@ -69,22 +69,15 @@ describe("message db - postgres", () => {
         expect(res.length).to.equal(2);
     });
 
-    it("empty db post two messages with identities", async () => {
-        let newBlock = 50001;
+    it("empty db save identities", async () => {
         const identities = [
             { uuid: uuid(), value: "hello"},
             { uuid: uuid(), value: "world"},
         ];
-        await db.postMessages([asEvent(message2), asEvent(message3)], newBlock, identities);
-        let blockHeight = await db.getCurrentBlockHeight();
-        expect(blockHeight).to.equal(newBlock);
-        let res = await db.getAllMessages();
+        await db.saveIdentities(identities);
+        let res = await db.getAllIdentities();
         expect(res.length).to.equal(2);
-        expect(messageEqual(res[1], message3)).to.equal(true);
-
-        let resIdentities = await db.getAllIdentities();
-        expect(resIdentities.length).to.equal(2);
-        expect(resIdentities).to.eql(identities);
+        expect(res).to.eql(identities);
     });
 });
 

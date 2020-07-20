@@ -5,7 +5,7 @@ const fetch = require("node-fetch");
 const MessageOrbsDriver = require("../src/orbs/messageDriver");
 const MessageDB = require('../src/messagedb/message.postgres.db');
 
-const orbsEndpoint = process.env.ORBS_NODE_ADDRESS || "http://localhost:8090";
+const orbsEndpoint = process.env.ORBS_NODE_ADDRESS || "http://localhost:8080";
 const vChainId = Number(process.env.ORBS_VCHAIN) || 42;
 const orbsContractNameBase = process.env.ORBS_CONTRACT_NAME || "message";
 const orbsContractMethodName = "message";

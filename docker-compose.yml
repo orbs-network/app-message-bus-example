@@ -4,7 +4,7 @@ services:
     collector:
         image: orbsnetwork/message-bus
         ports:
-            - 8080:3000
+            - 9000:3000
         env_file: ./.env.local.collector
         mem_limit: 256000000
         command: node ./collector/index.js
@@ -22,7 +22,7 @@ services:
     gamma:
         image: orbsnetwork/gamma:experimental
         ports:
-            - 8090:8080
+            - 8080:8080
         restart: always
 
     postgres:

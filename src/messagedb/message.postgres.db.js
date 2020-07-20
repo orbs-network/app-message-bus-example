@@ -115,6 +115,17 @@ class MessageDb {
         })
     }
 
+    saveIdentities(identities) {
+        return this.db.tx(t => {
+            let batch = [];
+            for (let i = 0; i < identities.length; i++){
+                batch.push(this._writeIdentityInTransaction(t, identities[i]));
+            }
+
+            return t.batch(batch);
+        })
+    }
+
     async clearAll() {
         await this.db.none("DROP TABLE $1~", [DB_EVENTS_TABLE_NAME]);
         await this.db.none("DROP TABLE $1~", [DB_CONFIG_TABLE_NAME]);

@@ -17,7 +17,7 @@ const { merge } = require("lodash");
 const MessageOrbsDriver = require('../src/orbs/messageDriver');
 const gateway = require('../src/gateway/server');
 const collector = require('../src/collector/server');
-const MessageDB = require('../src/messagedb/message.db');
+const MessageDB = require('../src/messagedb/message.postgres.db');
 
 const orbsEndpoint = process.env.ORBS_NODE_ADDRESS || "http://localhost:8080";
 const vChainId = Number(process.env.ORBS_VCHAIN) || 42;
@@ -66,7 +66,7 @@ describe("e2e", () => {
         messageDB = new MessageDB(messageDbUrl, messageDbName, deployBlock);
         sinon.stub(messageDB, 'postMessages').callsFake();
         sinon.stub(messageDB, 'getCurrentBlockHeight').resolves(deployBlock); // for the first time
-        gatewayServer = gateway.serve(gatewayPort, [messageOrbsConnection]);
+        gatewayServer = await gateway.serve(gatewayPort, [messageOrbsConnection], [], {});
         collectorServer = collector.serve(collectorPort, messageOrbsConnection, messageDB);
         collectorServer.start();
     });
@@ -101,7 +101,7 @@ describe("e2e with API key", () => {
         messageDB = new MessageDB(messageDbUrl, messageDbName, deployBlock);
         sinon.stub(messageDB, 'postMessages').callsFake();
         sinon.stub(messageDB, 'getCurrentBlockHeight').resolves(deployBlock); // for the first time
-        gatewayServer = gateway.serve(gatewayPort, [messageOrbsConnection], ["some-api-key"]);
+        gatewayServer = await gateway.serve(gatewayPort, [messageOrbsConnection], ["some-api-key"], {});
         collectorServer = collector.serve(collectorPort, messageOrbsConnection, messageDB);
         collectorServer.start();
     });
@@ -125,6 +125,40 @@ describe("e2e with API key", () => {
     });
 });
 
+describe("e2e with anonymized keys", () => {
+    let sandbox;
+    const gatewayPort = 3001;
+
+    let messageDB;
+    let gatewayServer;
+    beforeEach(async () => {
+        sandbox = sinon.createSandbox();
+        const contractNameRand = orbsContractNameBase + new Date().getTime();
+        const messageOrbsConnection = new MessageOrbsDriver(orbsEndpoint, vChainId, contractNameRand, orbsContractMethodName, orbsContractEventName);
+        let deployBlock = await messageOrbsConnection.deploy();
+        messageDB = new MessageDB(messageDbUrl, messageDbName, deployBlock);
+        await messageDB.connect();
+        // sinon.stub(messageDB, 'saveIdentities').callsFake();
+        // sinon.stub(messageDB, 'getCurrentBlockHeight').resolves(deployBlock); // for the first time
+        gatewayServer = await gateway.serve(gatewayPort, [messageOrbsConnection], [], { fields: ["operator"], connectionUrl: messageDbUrl });
+    });
+    afterEach(async () => {
+        gatewayServer && await gatewayServer.close();
+        sandbox.restore();
+        await messageDB.clearAll();
+    });
+
+    it("send-read message", async () => {
+        const msg = { operator: "random guy", hello: "world" };
+        let blockHeight = expectSuccessAndReturnBlockHeight(await sendMessageToGateway(gatewayPort, msg));
+        expect(blockHeight).to.not.equal(0);
+        await sleep(200);
+        let res = await messageDB.getAllIdentities();
+        expect(res[0].uuid.length).to.be.eql(36);
+        expect(res[0].value).to.be.eql("random guy");
+    });
+});
+
 describe("gateway - two orbs connections", () => {
     const gatewayPort = 3001;
 
@@ -140,7 +174,7 @@ describe("gateway - two orbs connections", () => {
         deploy2Block = await messageOrbsConnection2.deploy();
         expect(deploy2Block).to.not.equal(0);
         expect(deploy1Block).to.not.equal(deploy2Block);
-        gatewayServer = gateway.serve(gatewayPort, [messageOrbsConnection, messageOrbsConnection2]);
+        gatewayServer = await gateway.serve(gatewayPort, [messageOrbsConnection, messageOrbsConnection2], [], {});
     });
     afterEach(() => {
         gatewayServer && new Promise((res, rej) => gatewayServer.close((err) => (err ? rej(err) : res())));

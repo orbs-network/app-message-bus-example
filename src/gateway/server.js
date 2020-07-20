@@ -7,7 +7,9 @@
  */
 
 const generateExpressServer = require('../express-index');
-const { isEmpty, includes } = require("lodash");
+const { isEmpty, includes, map, has } = require("lodash");
+const { uuid } = require('uuidv4');
+const MessageDb = require('../messagedb/message.postgres.db');
 
 class GatewayServer {
   constructor(listener) {
@@ -19,10 +21,20 @@ class GatewayServer {
   }
 }
 
-module.exports.serve = function serve(port, orbsConnections, apiKeys) {
+module.exports.serve = async function serve(port, orbsConnections, apiKeys, anonymousConfig) {
   const app = generateExpressServer('gateway', port);
+  let db;
+  const { fields, connectionUrl } = anonymousConfig;
+
   if (isEmpty(apiKeys)) {
     console.info(`No API keys configured, anyone will be able to send messages via gateway`);
+  }
+
+  if (isEmpty(fields)) {
+    console.info(`No anonymous fields configured, everything will be recorded as is`);
+  } else {
+    db = new MessageDb(connectionUrl);
+    await db.connect();
   }
 
   app.post("/sendMessage", async (request, response) => {
@@ -37,13 +49,30 @@ module.exports.serve = function serve(port, orbsConnections, apiKeys) {
         }
       }
 
+      let identities = [];
+      map(fields, (field) => {
+        if (has(data, field)) {
+          const value = data[field];
+          const id = uuid();
+          data[field] = id;
+          identities.push({ uuid: id, value });
+        }
+      });
+
       let txs = [];
       for (let i = 0; i < orbsConnections.length; i++) {
-           txs.push(orbsConnections[i].message(data).then(resp => {return { connection: i, endpoint: orbsConnections[i].endpoint, response: resp} }));
+        txs.push(orbsConnections[i].message(data).then(resp => {
+            return { connection: i, endpoint: orbsConnections[i].endpoint, response: resp };
+        }));
       }
       let resp = await Promise.all(txs);
       response.json(resp);
+
+      if (!isEmpty(identities) && db) {
+        db.saveIdentities(identities).catch(console.error);
+      }
     } catch (e) {
+      console.error(e);
       response.json({error: e.message, stack: e.stack})
     }
   });
