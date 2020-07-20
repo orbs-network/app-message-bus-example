@@ -20,7 +20,7 @@ const orbsContractName = process.env.ORBS_CONTRACT_NAME;
 const orbsContractMethodName = "message";
 const orbsContractEventName = "message";
 const apiKeys = isEmpty(process.env.API_KEYS) ? [] : process.env.API_KEYS.split(",").map(s => s.trim());
-const anonymousFields = isEmpty(process.env.ANONUMOUS_FIELDS) ? [] : process.env.ANONUMOUS_FIELDS.split(",").map(s => s.trim());
+const anonymousFields = isEmpty(process.env.ANONYMOUS_FIELDS) ? [] : process.env.ANONYMOUS_FIELDS.split(",").map(s => s.trim());
 const identityDbURL = process.env.IDENTITY_DB_URL;
 
 const port = process.env.PORT || 3000;

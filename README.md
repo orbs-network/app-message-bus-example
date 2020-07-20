@@ -74,6 +74,14 @@ If the `API_KEYS` variable is set, all the requests without the key will be reje
 
 All valid requests **should include** `X-Auth: $API_KEY_VALUE` in the list of HTTP headers.
 
+##### Anonymization
+
+Environment variable `ANONYMOUS_FIELDS=key1,key2,key3` allows to anonymize certain fields in the payload.
+
+If the `ANONYMOUS_FIELDS` variable is set, the value of the field will be replaced with `uuidv4` value and stored in `identities` table.
+
+`IDENTITY_DB_URL` is requred for this feature to work.
+
 ### Running locally
 
 ```bash
