@@ -8,6 +8,8 @@
 const MessageOrbsDriver = require('../orbs/messageDriver');
 const gateway = require('./server');
 
+const { isEmpty } = require("lodash");
+
 // check env only on production (=docker with internal docker directory structure)
 if (process.env.NODE_ENV === 'production'){ require('dotenv-safe').config({example: './gateway/.env.example'}); }
 
@@ -17,7 +19,7 @@ const orbsVChain = process.env.ORBS_VCHAIN;
 const orbsContractName = process.env.ORBS_CONTRACT_NAME;
 const orbsContractMethodName = "message";
 const orbsContractEventName = "message";
-const apiKeys = (process.env.API_KEYS || "").split(",").map(s => s.trim());
+const apiKeys = isEmpty(process.env.API_KEYS) ? [] : process.env.API_KEYS.split(",").map(s => s.trim());
 
 const port = process.env.PORT || 3000;
 

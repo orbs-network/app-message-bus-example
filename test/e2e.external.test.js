@@ -28,6 +28,7 @@ async function sendMessageToGateway(msg) {
         body: JSON.stringify(msg),
     });
     const result = await body.json();
+    console.log(result);
     expect(result.length).to.equal(1);
     expect(result[0].response.code).to.equal(MessageOrbsDriver.ResultSuccess);
     return result[0].response.blockHeight;
@@ -42,6 +43,7 @@ describe("external e2e", () => {
         if (SKIP_DEPLOY) {
             deployBlock = 1;
         } else {
+            console.log(`Deploying smart contract`);
             deployBlock = await messageOrbsConnection.deploy();
         }
         messageDB = new MessageDB(messageDbUrl, messageDbName, deployBlock);
