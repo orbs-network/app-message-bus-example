@@ -10,8 +10,9 @@ const vChainId = Number(process.env.ORBS_VCHAIN) || 42;
 const orbsContractNameBase = process.env.ORBS_CONTRACT_NAME || "message";
 const orbsContractMethodName = "message";
 const orbsContractEventName = "message";
-const messageDbUrl = "postgres://root:example@localhost:5432/message";
-const messageDbName = "message";
+const messageDbUrl =  process.env.MESSAGE_DB_URL || "postgres://root:example@localhost:5432/message";
+const messageDbName = process.env.MESSAGE_DB_NAME || "message";
+const gatewayEndpoint = process.env.ENDPOINT || "http://localhost:80";
 const SKIP_DEPLOY = process.env.SKIP_DEPLOY == "true";
 
 function sleep(ms) {
@@ -21,12 +22,13 @@ function sleep(ms) {
 }
 
 async function sendMessageToGateway(msg) {
-    const body = await fetch(`http://localhost:80/sendMessage`, {
+    const body = await fetch(`${gatewayEndpoint}/sendMessage`, {
         method: "post",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(msg),
     });
     const result = await body.json();
+    console.log(result);
     expect(result.length).to.equal(1);
     expect(result[0].response.code).to.equal(MessageOrbsDriver.ResultSuccess);
     return result[0].response.blockHeight;
@@ -41,6 +43,7 @@ describe("external e2e", () => {
         if (SKIP_DEPLOY) {
             deployBlock = 1;
         } else {
+            console.log(`Deploying smart contract`);
             deployBlock = await messageOrbsConnection.deploy();
         }
         messageDB = new MessageDB(messageDbUrl, messageDbName, deployBlock);

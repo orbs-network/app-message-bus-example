@@ -12,6 +12,7 @@ const expect = require("expect.js");
 const {describe, it, beforeEach, afterEach} = require('mocha');
 const sinon = require('sinon');
 const fetch = require("node-fetch");
+const { merge } = require("lodash");
 
 const MessageOrbsDriver = require('../src/orbs/messageDriver');
 const gateway = require('../src/gateway/server');
@@ -26,13 +27,17 @@ const orbsContractEventName = "message";
 const messageDbUrl = 'postgres://root:example@localhost:5432/message';
 const messageDbName = 'message';
 
-async function sendMessageToGateway(port, msg) {
+async function sendMessageToGateway(port, msg, headers) {
     const body = await fetch(`http://localhost:${port}/sendMessage`, {
         method: "post",
-        headers: { 'Content-Type': 'application/json' },
+        headers: merge({ 'Content-Type': 'application/json' }, headers),
         body: JSON.stringify(msg),
     });
     const result = await body.json();
+    return result;
+}
+
+function expectSuccessAndReturnBlockHeight(result) {
     expect(result.length).to.equal(1);
     expect(result[0].response.code).to.equal(MessageOrbsDriver.ResultSuccess);
     return result[0].response.blockHeight;
@@ -73,9 +78,49 @@ describe("e2e", () => {
 
     it("send-read message", async () => {
         const msg = { hello: "world" };
-        let blockHeight = await sendMessageToGateway(gatewayPort, msg);
+        let blockHeight = expectSuccessAndReturnBlockHeight(await sendMessageToGateway(gatewayPort, msg));
         expect(blockHeight).to.not.equal(0);
         await sleep(200);
+        sinon.assert.callCount(messageDB.postMessages, 1);
+    });
+});
+
+describe("e2e with API key", () => {
+    let sandbox;
+    const gatewayPort = 3001;
+    const collectorPort = 3002;
+
+    let messageDB;
+    let gatewayServer;
+    let collectorServer;
+    beforeEach(async () => {
+        sandbox = sinon.createSandbox();
+        const contractNameRand = orbsContractNameBase + new Date().getTime();
+        const messageOrbsConnection = new MessageOrbsDriver(orbsEndpoint, vChainId, contractNameRand, orbsContractMethodName, orbsContractEventName);
+        let deployBlock = await messageOrbsConnection.deploy();
+        messageDB = new MessageDB(messageDbUrl, messageDbName, deployBlock);
+        sinon.stub(messageDB, 'postMessages').callsFake();
+        sinon.stub(messageDB, 'getCurrentBlockHeight').resolves(deployBlock); // for the first time
+        gatewayServer = gateway.serve(gatewayPort, [messageOrbsConnection], ["some-api-key"]);
+        collectorServer = collector.serve(collectorPort, messageOrbsConnection, messageDB);
+        collectorServer.start();
+    });
+    afterEach(async () => {
+        gatewayServer && await gatewayServer.close();
+        collectorServer && await collectorServer.close();
+        sandbox.restore();
+    });
+
+    it("send-read message", async () => {
+        const msg = { hello: "world" };
+        let blockHeight = expectSuccessAndReturnBlockHeight(await sendMessageToGateway(gatewayPort, msg, {"X-Auth": "some-api-key"}));
+        expect(blockHeight).to.not.equal(0);
+        await sleep(200);
+        sinon.assert.callCount(messageDB.postMessages, 1);
+
+        // fails without API key
+        const result = await sendMessageToGateway(gatewayPort, msg);
+        expect(result.error).to.be.eql("Wrong API key");
         sinon.assert.callCount(messageDB.postMessages, 1);
     });
 });
