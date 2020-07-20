@@ -14,13 +14,12 @@ const MessageDB = require('../src/messagedb/message.postgres.db');
 const { uuid } = require("uuidv4");
 
 const DummyUrl = 'postgres://root:example@localhost:5432/message';
-const DummyName = 'message';
 const DefaultHeight = 1;
 
 // mongo-mock seems to get the mocha stuck at end - so this is skipped.
 // these tests are more "robust" as they test logic inside db too via local temp.
 describe("message db - postgres", () => {
-    let db = new MessageDB(DummyUrl, DummyName, DefaultHeight);
+    let db = new MessageDB(DummyUrl, DefaultHeight);
     beforeEach(async () => {
         await db.connect();
     });

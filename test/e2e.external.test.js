@@ -11,7 +11,6 @@ const orbsContractNameBase = process.env.ORBS_CONTRACT_NAME || "message";
 const orbsContractMethodName = "message";
 const orbsContractEventName = "message";
 const messageDbUrl =  process.env.MESSAGE_DB_URL || "postgres://root:example@localhost:5432/message";
-const messageDbName = process.env.MESSAGE_DB_NAME || "message";
 const gatewayEndpoint = process.env.ENDPOINT || "http://localhost:80";
 const SKIP_DEPLOY = process.env.SKIP_DEPLOY == "true";
 
@@ -46,7 +45,7 @@ describe("external e2e", () => {
             console.log(`Deploying smart contract`);
             deployBlock = await messageOrbsConnection.deploy();
         }
-        messageDB = new MessageDB(messageDbUrl, messageDbName, deployBlock);
+        messageDB = new MessageDB(messageDbUrl, deployBlock);
         await messageDB.connect();
     });
 

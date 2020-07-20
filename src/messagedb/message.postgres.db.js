@@ -21,8 +21,9 @@ const DB_IDENTITIES_TABLE_NAME = 'identities';
 const ORBS_START_BLOCK_HEIGHT = process.env.ORBS_START_BLOCK_HEIGHT || 1;
 
 class MessageDb {
-    constructor(connectionUrl) {
+    constructor(connectionUrl, startBlockHeight) {
         this.connectionUrl = connectionUrl;
+        this.startBlockHeight = startBlockHeight || ORBS_START_BLOCK_HEIGHT;
     }
 
     async connect() {
@@ -51,7 +52,7 @@ class MessageDb {
             await this.getCurrentBlockHeight();
         } catch (e) {
             console.log("Writing default config value");
-            await this._setDefaultBlockHeight(ORBS_START_BLOCK_HEIGHT);
+            await this._setDefaultBlockHeight(this.startBlockHeight);
         }
     }
 
